@@ -5,7 +5,7 @@ import sys
 import time
 import urllib.request
 
-URL = "http://localhost:8080/ready"
+URL = "http://localhost:8090/ready"
 TIMEOUT = 2
 RECOVERY_TIMEOUT = 30
 

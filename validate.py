@@ -7,7 +7,7 @@ import sys
 import urllib.error
 import urllib.request
 
-EXPECTED_CONTAINERS = ["app-01", "app-02", "nginx", "postgres", "redis"]
+EXPECTED_CONTAINERS = ["app-01", "app-02", "app-03", "nginx", "postgres", "redis"]
 ENDPOINTS = ["/", "/health", "/ready", "/instance", "/records", "/counter"]
 
 
@@ -71,12 +71,12 @@ def main():
     )
     nginx_ports = stdout if rc == 0 else ""
     record(
-        "nginx publishes host port 8080",
-        rc == 0 and '"80/tcp"' in nginx_ports and '"8080"' in nginx_ports,
+        "nginx publishes host port 8090",
+        rc == 0 and '"80/tcp"' in nginx_ports and '"HostPort":"8090"' in nginx_ports,
         stderr or nginx_ports,
     )
 
-    for container in ["postgres", "redis", "app-01", "app-02"]:
+    for container in ["postgres", "redis", "app-01", "app-02", "app-03"]:
         rc, stdout, stderr = run(
             ["docker", "inspect", "--format", "{{json .HostConfig.PortBindings}}", container]
         )
@@ -88,7 +88,7 @@ def main():
 
     # 4. Required application endpoints return HTTP 200.
     for endpoint in ENDPOINTS:
-        url = f"http://127.0.0.1:8080{endpoint}"
+        url = f"http://127.0.0.1:8090{endpoint}"
         try:
             with urllib.request.urlopen(url, timeout=3) as response:
                 status = response.status
