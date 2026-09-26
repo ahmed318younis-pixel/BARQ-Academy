@@ -1,97 +1,260 @@
-<img src="assets/barq-logo.svg" alt="BARQ Systems" width="180">
+# BARQ Academy DevOps Internship — Final Submission
 
-# DevOps Internship Task - Starter v2
+## Overview
 
-**Due date:** ____________________
+This repository contains the repaired and validated BARQ Academy DevOps assessment environment.
 
-**Time window:** 4 calendar days from the invitation email date/time.
+Final runtime:
 
-Read [the task](assessment/TASK.md), then [the API contract](assessment/APPLICATION.md).
-Everyone receives this same release. The environment is intentionally broken.
-Hidden issue types and count are not disclosed. Investigate this project; do not replace it.
+- NGINX reverse proxy
+- Three Flask application instances: `app-01`, `app-02`, `app-03`
+- PostgreSQL
+- Redis
+- Docker Compose
+- Frontend and internal backend networks
+- Persistent PostgreSQL and Redis volumes
 
-## Included
+Final public endpoint:
 
-- Flask API, PostgreSQL, Redis, Docker and NGINX starter files.
-- Three historical logs, a question template and documentation templates.
-- App-only tests and a recorded challenge script.
-- Unimplemented validation, failure-test and backup/restore placeholders.
+`http://127.0.0.1:8090`
 
-Use synthetic lab accounts/data only. Supplied values are for this disposable exercise,
-never for real services. Keep the lab on your local machine; do not expose it publicly.
+## Prerequisites
 
-## Before you start
+- Linux or WSL2
+- Python 3.12+
+- Git
+- Docker
+- Docker Compose
 
-- Linux or WSL2, Python 3.12, Git and Docker with Compose.
-- Docker Desktop must use Linux containers. Run shell scripts in Linux/WSL.
-- Suggested capacity: 2 CPU cores, 4 GB free RAM and 3 GB free disk, plus Docker overhead.
-- Internet for first downloads and GitHub. No cloud account or paid registry required.
-- Use a machine where container names app-01, app-02, nginx, postgres and redis are unused.
-  Do not delete someone else's containers to free those names.
-- Intended public port: 8080 before the video, 8090 after the live change.
-  If either is occupied, ask the organizer for a documented workstation exception.
+This is a disposable local lab. Do not expose it publicly and do not use real credentials or production data.
 
-## Start
+## Configuration
 
-Clone the supplied Git bundle/repository. Keep both release commits and the v2 baseline tag.
-Set your own Git name/email before making changes.
+Create the local environment file:
 
-From the repository root:
+`cp .env.example .env`
 
-```bash
-git status
-git log -2 --oneline
-cp .env.example .env
-docker version
-docker compose version
-docker compose -p barq-assessment up --build -d
-docker compose -p barq-assessment ps -a
-docker compose -p barq-assessment logs --no-color
-```
+Set a local PostgreSQL password in `.env`.
 
-The initial environment is not expected to pass. Record what actually happens.
-The intended URL is http://127.0.0.1:8080; do not assume the starter configuration is correct.
+The real `config/app.env` is local-only and must not be committed.
 
-App-only checks use fake dependencies, not real SQL/Redis or Docker networking:
+Validate the Compose configuration:
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-python -m unittest discover -s tests -v
-```
+`docker compose config`
 
-## Your work
+## Build and Start
 
-- Complete [assessment/TASK.md](assessment/TASK.md).
-- Implement validate.py, failure_test.py, backup.sh and restore.sh, or documented equivalents.
-  Placeholders deliberately exit 2; they are unfinished deliverables, not validation evidence.
-- Create .github/workflows/ci.yml yourself.
-- Complete the root report templates and docs/EVIDENCE_INDEX.md.
-- Add architecture.png or architecture.pdf.
-- Replace this README with copyable setup/build/run/test/failure/backup/restore/cleanup commands.
-- Commit as you work. Do not commit real secrets, backups, virtual environments or challenge state.
+`docker compose up --build -d`
 
-## Recorded challenge
+Check the services:
 
-Use the supplied video_challenge.sh unchanged. Read its code if needed; do not run it early.
-After repairing the environment, run it once, for the first time in the video working copy,
-during the continuous 12-18 minute recording. The script requires healthy services, both
-initial instances and the target network layout. Preflight failures make no runtime changes.
+`docker compose ps`
 
-```bash
-./video_challenge.sh
-```
+Expected services:
 
-If you deliberately changed the project name, pass --project YOUR_PROJECT.
-An organizer-approved alternate local URL can be passed with --url http://127.0.0.1:PORT.
-The script touches only matching Compose-owned lab containers/networks.
-Keep the receipt in .assessment/challenge.json for the evidence index. Do not delete the
-one-run marker to retry. A local marker is not tamper-proof; ownership is judged from evidence.
-Do not use docker compose down to reset the runtime challenge.
+- `app-01`
+- `app-02`
+- `app-03`
+- `nginx`
+- `postgres`
+- `redis`
 
-## Stop safely
+Only NGINX publishes a host port:
 
-Outside the recorded challenge, docker compose -p barq-assessment down stops this lab.
-Do not use --volumes during persistence tests. Avoid global Docker prune/cleanup commands.
-Back up anything you need before removing containers; investigate whether data actually persists.
+`127.0.0.1:8090 -> nginx:80`
+
+The application, PostgreSQL and Redis containers do not publish host ports.
+
+## Application Tests
+
+Run:
+
+`curl http://127.0.0.1:8090/`
+
+`curl http://127.0.0.1:8090/health`
+
+`curl http://127.0.0.1:8090/ready`
+
+`curl -i http://127.0.0.1:8090/instance`
+
+`curl http://127.0.0.1:8090/records`
+
+`curl http://127.0.0.1:8090/counter`
+
+Complete environment validation:
+
+`python3 validate.py`
+
+The final validation checks the three application instances, service health, NGINX port 8090, prohibited host-port bindings and required endpoints.
+
+## Failure and Recovery Test
+
+Run:
+
+`python3 failure_test.py`
+
+The test verifies that PostgreSQL failure causes readiness to fail and that readiness returns successfully after PostgreSQL recovery.
+
+Do not use `docker compose down` during the recorded runtime challenge.
+
+## Backup and Restore
+
+Create a PostgreSQL backup:
+
+`./backup.sh`
+
+Restore a backup:
+
+`./restore.sh backups/<backup-file>.sql`
+
+Backups are disposable lab artifacts and must not be committed.
+
+## Persistence
+
+PostgreSQL uses the named volume `postgres-data`.
+
+Redis uses the named volume `redis-data`.
+
+To recreate PostgreSQL without deleting its named volume:
+
+`docker compose rm -sf postgres`
+
+`docker compose up -d postgres`
+
+Then verify:
+
+`curl http://127.0.0.1:8090/records`
+
+Do not use `docker compose down -v` during persistence testing because `-v` removes named volumes.
+
+## Logs and Troubleshooting
+
+Check services:
+
+`docker compose ps`
+
+View logs:
+
+`docker compose logs --no-color`
+
+Historical log analysis is documented in `docs/log_analysis.md`.
+
+Troubleshooting is documented in `troubleshooting.md`.
+
+## Automated Tests
+
+Create the virtual environment:
+
+`python3 -m venv .venv`
+
+Activate it:
+
+`source .venv/bin/activate`
+
+Install dependencies:
+
+`python -m pip install -r requirements.txt`
+
+Run application tests:
+
+`python -m unittest discover -s tests -v`
+
+Run environment validation:
+
+`python3 validate.py`
+
+Run failure/recovery validation:
+
+`python3 failure_test.py`
+
+## Recorded Challenge
+
+The supplied challenge script is:
+
+`./video_challenge.sh`
+
+The assessment challenge requires runtime fault diagnosis and recovery, the live public-port change from 8080 to 8090, addition of the third application instance and final validation.
+
+Keep the challenge receipt under `.assessment/challenge.json` when available.
+
+Do not delete or modify challenge state to retry the one-run challenge.
+
+## Final Architecture
+
+Client -> NGINX :8090 -> app-01/app-02/app-03 :8080
+
+The application instances communicate with PostgreSQL :5432 and Redis :6379 through the internal backend network.
+
+NGINX uses the frontend network and is not directly connected to the backend network.
+
+See `docs/ARCHITECTURE.md` and `architecture.png`.
+
+## Documentation
+
+- `docs/log_analysis.md` — historical log investigation
+- `troubleshooting.md` — troubleshooting record
+- `decisions.md` — engineering decisions and trade-offs
+- `docs/security_review.md` — security review
+- `docs/ARCHITECTURE.md` — architecture documentation
+- `docs/EVIDENCE_INDEX.md` — submission evidence mapping
+- `AI_USAGE.md` — AI usage disclosure
+- `assessment/TASK.md` — assessment requirements
+- `assessment/APPLICATION.md` — application contract
+
+## Stop and Cleanup
+
+Stop the lab:
+
+`docker compose down`
+
+To intentionally remove persistent volumes:
+
+`docker compose down -v`
+
+Use `-v` only when deletion of PostgreSQL and Redis data is intentional.
+
+Avoid global Docker cleanup commands such as `docker system prune`.
+
+## Git Safety
+
+Before committing:
+
+`git status`
+
+`git diff`
+
+Never commit:
+
+- `.env`
+- `config/app.env`
+- PostgreSQL backups
+- dumps
+- virtual environments
+- credentials or tokens
+
+## Evidence Screenshots
+
+Selected screenshots are stored under `Photos/evidence/`. Sensitive screenshots
+containing visible credentials were intentionally excluded.
+
+### NGINX and Runtime Investigation
+
+![NGINX upstream investigation](Photos/evidence/Screenshot%202026-09-25%20180752.png)
+
+![NGINX upstream port investigation](Photos/evidence/Screenshot%202026-09-25%20181021.png)
+
+### Application Validation
+
+![Application records validation](Photos/evidence/Screenshot%202026-09-25%20195335.png)
+
+![Redis counter validation](Photos/evidence/Screenshot%202026-09-25%20200130.png)
+
+### Network and Persistence
+
+![Network isolation validation](Photos/evidence/Screenshot%202026-09-25%20201423.png)
+
+![PostgreSQL persistence validation](Photos/evidence/Screenshot%202026-09-25%20215059.png)
+
+### Security Hardening
+
+![Non-root application validation](Photos/evidence/Screenshot%202026-09-25%20233030.png)

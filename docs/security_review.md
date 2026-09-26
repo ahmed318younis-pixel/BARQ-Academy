@@ -7,15 +7,18 @@ secrets handling, persistence, and runtime configuration.
 
 ## Findings
 
-### 1. Plain-text PostgreSQL credential in Compose
+### 1. PostgreSQL credential is supplied through environment substitution
 
-**Risk:** The PostgreSQL password is defined directly in `docker-compose.yml`.
+**Risk:** The PostgreSQL password is supplied to Compose through an environment
+variable. A local `.env` file is still sensitive and must be protected.
 
-**Impact:** Anyone with access to the repository or Compose configuration may
-obtain the database credential.
+**Impact:** Anyone who obtains the local environment file or process/runtime
+configuration may obtain the database credential.
 
-**Current mitigation:** The application secret file is no longer copied into
-the Docker image and `config/app.env` is removed from Git tracking.
+**Current mitigation:** `docker-compose.yml` requires `POSTGRES_PASSWORD`
+through environment substitution, the real `config/app.env` is ignored and
+removed from Git tracking, and the application environment file is not copied
+into the image.
 
 **Recommendation:** Use Docker secrets or an external secret-management
 mechanism for production deployments.
@@ -129,7 +132,7 @@ conditions.
 surface.
 
 **Current mitigation:** Only NGINX publishes the host port, bound to
-`127.0.0.1:${PUBLIC_PORT:-8080}`.
+`127.0.0.1:${PUBLIC_PORT:-8090}`.
 
 **Recommendation:** For a remotely accessible deployment, expose the reverse
 proxy through the intended firewall/load-balancer boundary rather than

@@ -12,7 +12,7 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: Incorrect healthcheck path and application bind address.
 - Fix: Changed the healthcheck to `/health` and `APP_HOST` to `0.0.0.0`.
 - Retest evidence: Application containers became healthy and `/health` returned HTTP 200.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: None observed in the local validation.
 
 ## Entry 2 — NGINX upstream connection failure
@@ -25,7 +25,7 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: Incorrect upstream port combined with the application binding to localhost.
 - Fix: Changed the upstream port to `8080` and changed the application bind address to `0.0.0.0`.
 - Retest evidence: `nginx -t` passed and requests through NGINX succeeded.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: None observed during local testing.
 
 ## Entry 3 — PostgreSQL connectivity mismatch
@@ -38,7 +38,7 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: PostgreSQL port mismatch and credential mismatch.
 - Fix: Aligned the application configuration with the PostgreSQL service port and corrected the local runtime credential configuration.
 - Retest evidence: PostgreSQL dependency check passed and `/ready` returned HTTP 200.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: The local runtime secret is intentionally not recorded in this journal.
 
 ## Entry 4 — Redis connectivity mismatch
@@ -51,7 +51,7 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: Redis port mismatch.
 - Fix: Changed the application Redis connection to use the container service port `6379`.
 - Retest evidence: Redis dependency check passed and `/counter` returned HTTP 200.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: None observed during local validation.
 
 ## Entry 5 — PostgreSQL persistence configuration
@@ -64,7 +64,7 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: Incorrect PostgreSQL data volume configuration.
 - Fix: Changed the persistent mount to the named volume `postgres-data:/var/lib/postgresql/data` and removed the tmpfs data mount.
 - Retest evidence: Three records remained available after PostgreSQL container recreation.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: This is local Docker-volume persistence, not an off-host disaster-recovery mechanism.
 
 ## Entry 6 — Redis persistence
@@ -77,7 +77,7 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: Redis persistence was disabled.
 - Fix: Enabled `--appendonly yes` and mounted the named `redis-data` volume at `/data`.
 - Retest evidence: Redis persistence was verified across container recreation and the counter state was retained.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: Redis persistence here is intended for the assessment environment and is not a substitute for a production Redis durability/HA design.
 
 ## Entry 7 — Network isolation
@@ -90,7 +90,7 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: NGINX had unnecessary backend network membership.
 - Fix: Removed the backend network from NGINX; PostgreSQL and Redis remain backend-only.
 - Retest evidence: NGINX could no longer resolve/reach the PostgreSQL service by its backend service name.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: Docker network isolation is specific to this Compose environment.
 
 ## Entry 8 — Duplicate application identity
@@ -103,7 +103,7 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: Incorrect environment value for `app-02`.
 - Fix: Changed `app-02` to `INSTANCE_ID: app-02`.
 - Retest evidence: Both instances expose distinct identity values through `/instance` and `X-Instance-ID`.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: The final three-instance configuration is part of the later challenge phase.
 
 ## Entry 9 — Runtime secret in image
@@ -116,7 +116,7 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: Runtime secret configuration was included in the image build context.
 - Fix: Removed the `COPY config/app.env` instruction and kept the runtime configuration outside the image.
 - Retest evidence: `/srv/app.env` was absent from the rebuilt container and the application remained functional.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: Production should use a dedicated secret-management mechanism rather than local environment files.
 
 ## Entry 10 — Failure and recovery validation
@@ -129,5 +129,5 @@ This journal records the actual investigation and remediation performed during t
 - Root cause: Not an incident; this was a deliberate failure-injection test.
 - Fix: No application fix was required. PostgreSQL was restored after the test.
 - Retest evidence: `=== Failure/Recovery Test: PASS ===`.
-- Related commit: To be linked after implementation commit.
+- Related commit: 37168d8
 - Remaining uncertainty: The test covers PostgreSQL dependency failure; it does not represent every possible infrastructure failure mode.

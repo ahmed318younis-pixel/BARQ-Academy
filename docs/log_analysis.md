@@ -85,7 +85,7 @@ After the configuration fixes:
 
 - All required containers were running.
 - `app-01`, `app-02`, PostgreSQL and Redis were healthy.
-- NGINX published host port `8080`.
+- During the initial investigation state, NGINX published host port `8080`; the final challenge state changed the public port to `8090`.
 - Application endpoints `/`, `/health`, `/ready`, `/instance`, `/records`, and `/counter` returned HTTP 200.
 - PostgreSQL and Redis were reachable through the application.
 - PostgreSQL data survived container recreation.
